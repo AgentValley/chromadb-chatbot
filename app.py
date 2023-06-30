@@ -7,6 +7,11 @@ load_dotenv()
 app = Flask(__name__)
 
 
+@app.route('/', methods=['GET'])
+def hello():
+    return jsonify('AV ChromaDB')
+
+
 @app.route('/message', methods=['POST'])
 def user_message():
     content = request.json.get('message')
