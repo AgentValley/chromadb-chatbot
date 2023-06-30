@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Data Files
+_chromadb_/
+api_logs/
+chat_logs/
+db_logs/
+
 # C extensions
 *.so
 

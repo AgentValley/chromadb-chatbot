@@ -6,8 +6,11 @@ from uuid import uuid4
 import chromadb
 import openai
 from chromadb import Settings
+from dotenv import load_dotenv
 
 from utils import open_file, save_yaml, save_file
+
+load_dotenv()
 
 SCRATCHPAD_LENGTH = 10
 USER_SCRATCHPAD_LENGTH = 10
