@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from chatbot import process_user_message
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app = Flask(__name__)
 
