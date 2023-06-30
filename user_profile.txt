@@ -1,6 +1,6 @@
-- Name: UPDATE WITH YOUR NAME
-- Profession: UPDATE WITH YOUR JORB
-- Interests: UPDATE WITH YOUR HORBIES
-- Beliefs: WHAT DO YOU BELIEVE?
-- Plans: WHAT ARE YOUR GOALS?
-- Preference: HOW DO YOU PREFER TO COMMUNICATE?
+- User name: Jane Doe
+- Occupation: Graphic designer
+- Interests: Painting, photography, traveling
+- Beliefs: Believes in the power of creativity and self-expression
+- Goal: To start own design studio and inspire others through work
+- Communication preference: Email or video calls
