@@ -12,8 +12,8 @@ from utils import open_file, save_yaml, save_file
 
 load_dotenv()
 
-SCRATCHPAD_LENGTH = 10
-USER_SCRATCHPAD_LENGTH = 10
+SCRATCHPAD_LENGTH = 100
+USER_SCRATCHPAD_LENGTH = 100
 
 # instantiate ChromaDB
 persist_directory = "_chromadb_"
