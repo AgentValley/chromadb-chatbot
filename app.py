@@ -14,9 +14,10 @@ def hello():
 
 @app.route('/message', methods=['POST'])
 def user_message():
-    content = request.json.get('message')
-    user_id = request.json.get('user_id')
-    response = process_user_message(user_id, content)
+    uid = request.json.get('uid')
+    message = request.json.get('message')
+    chat_history = request.json.get('chat_history')
+    response = process_user_message(uid, message, chat_history)
     return jsonify({'response': response})
 
 
