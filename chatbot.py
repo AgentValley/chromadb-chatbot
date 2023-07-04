@@ -1,4 +1,3 @@
-import datetime
 import os
 from multiprocessing import Process
 from time import time, sleep
@@ -9,10 +8,12 @@ import openai
 from chromadb import Settings
 from dotenv import load_dotenv
 
+from cache.user_profile import get_user_profile, update_user_profile_in_db
 from utils import open_file, save_yaml, save_file
 
 load_dotenv()
 
+MAX_TOKENS = 4000
 SCRATCHPAD_LENGTH = 100
 USER_SCRATCHPAD_LENGTH = 100
 
@@ -39,14 +40,14 @@ def chatWithOpenAI(messages, model="gpt-3.5-turbo", temperature=0):
             debug_object = [i['content'] for i in messages]
             debug_object.append(text)
             save_yaml('api_logs/convo_%s.yaml' % time(), debug_object)
-            if response['usage']['total_tokens'] >= 7000:
-                a = messages.pop(1)
+            if response['usage']['total_tokens'] >= MAX_TOKENS:
+                messages.pop(1)
 
             return text
         except Exception as oops:
             print(f'\nError communicating with OpenAI: "{oops}"')
             if 'maximum context length' in str(oops):
-                a = messages.pop(1)
+                messages.pop(1)
                 print('\n DEBUG: Trimming oldest message')
                 continue
             retry += 1
@@ -82,7 +83,7 @@ def generate_response():
     return response
 
 
-def update_user_profile(current_profile, user_scratchpad):
+def update_user_profile(uid, current_profile, user_scratchpad):
     print('\nUpdating user profile...')
     profile_length = len(current_profile.split(' '))
     profile_conversation = list()
@@ -93,8 +94,9 @@ def update_user_profile(current_profile, user_scratchpad):
                                  'content': content})
     profile_conversation.append({'role': 'user', 'content': user_scratchpad})
     profile = chatWithOpenAI(profile_conversation)
-    # save_file('user_profile.txt', profile)
 
+    # save_file('user_profile.txt', profile)
+    update_user_profile_in_db(uid, profile)
 
 def first_KB(uid, main_scratchpad):
     # yay first KB!
@@ -154,7 +156,8 @@ def split_KB(kb_id, article):
 def generate_scratchpad(_chat_history):
     if len(_chat_history) > SCRATCHPAD_LENGTH:
         _chat_history.pop(0)
-    scratchpad = '\n'.join([x.get('role') + '[' + x.get('time') + ']:' + x.get('content') for x in _chat_history]).strip()
+    scratchpad = '\n'.join(
+        [x.get('role') + '[' + x.get('time') + ']:' + x.get('content') for x in _chat_history]).strip()
     return scratchpad
 
 
@@ -179,7 +182,7 @@ def post_processing(uid, current_profile, chat_history):
     user_scratchpad = generate_scratchpad(user_messages)
 
     # update user profile
-    update_user_profile(current_profile, user_scratchpad)
+    update_user_profile(uid, current_profile, user_scratchpad)
 
     main_scratchpad = generate_scratchpad(chat_history)
 
@@ -194,9 +197,9 @@ def post_processing(uid, current_profile, chat_history):
     print(f'\nFinished post processing...')
 
 
-def process_user_message(uid, message, chat_history):
-    # user = f'user-{user_id}'
-    current_profile = open_file('user_profile.txt')
+def process_user_message(uid, course_name, message, chat_history):
+    # current_profile = open_file('user_profile.txt')
+    current_profile = get_user_profile(uid)
 
     # Prepare to generate response
     pre_processing(uid, message, current_profile, chat_history)
@@ -205,7 +208,7 @@ def process_user_message(uid, message, chat_history):
     response = generate_response()
 
     # Store the response
-    post_process = Process(target=post_processing, args=(uid, current_profile, chat_history, ))
+    post_process = Process(target=post_processing, args=(uid, current_profile, chat_history,))
     post_process.start()
 
     return response
