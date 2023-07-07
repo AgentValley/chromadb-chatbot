@@ -1,10 +1,16 @@
-from flask import Flask, request, jsonify
-from chatbot import process_user_message
+import os
+
+from flask import Flask, jsonify
 from dotenv import load_dotenv
+
+from routes.message import message_bp
+from routes.upload import upload_bp
 
 load_dotenv()
 
 app = Flask(__name__)
+
+upload_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
 @app.route('/', methods=['GET'])
@@ -12,14 +18,8 @@ def hello():
     return jsonify('AV ChromaDB')
 
 
-@app.route('/message', methods=['POST'])
-def user_message():
-    uid = request.json.get('uid')
-    course_name = request.json.get('course_name')
-    message = request.json.get('message')
-    chat_history = request.json.get('chat_history')
-    response = process_user_message(uid, course_name, message, chat_history)
-    return jsonify({'response': response})
+app.register_blueprint(message_bp, url_prefix='/message')
+app.register_blueprint(upload_bp, url_prefix='/upload')
 
 
 if __name__ == '__main__':
