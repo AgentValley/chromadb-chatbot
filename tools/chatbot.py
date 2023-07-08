@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 from cache.user_profile import get_user_profile, update_user_profile_in_db
 from tools import KBCollection
 from tools.load_data import load_data_from_urls
-from utils import open_file, save_yaml, save_file, split_long_messages
+from utils import open_file, save_file
+
+# from utils import save_yaml
 
 load_dotenv()
 
@@ -20,58 +22,41 @@ SCRATCHPAD_LENGTH = 100
 USER_SCRATCHPAD_LENGTH = 100
 
 # instantiate ChromaDB
-persist_directory = "_chromadb_"
+persist_directory = os.getenv("PERSIST_DIR", "../_chromadb_")
 chroma_client = chromadb.Client(Settings(persist_directory=persist_directory, chroma_db_impl="duckdb+parquet", ))
 
 # instantiate chatbot
 openai.api_key = os.getenv('OPENAI_API_KEY')
+
 # conversation = list()
 
 
-def chat_with_open_ai(conversation, model="gpt-3.5-turbo", temperature=0):
-    max_retry = 3
-    retry = 0
-    messages = [{'role': x.get('role', 'assistant'),
-                 'content': x.get('content', '')} for x in conversation]
-    while True:
-        try:
-            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
-            text = response['choices'][0]['message']['content']
+load_dotenv()
 
-            # trim message object
-            debug_object = [i['content'] for i in messages]
-            debug_object.append(text)
-            save_yaml('api_logs/convo_%s.yaml' % time(), debug_object)
-            if response['usage']['total_tokens'] >= MAX_TOKENS:
-                messages = split_long_messages(messages)
-                if len(messages) > 1:
-                    messages.pop(1)
+MAX_TOKENS = 4000
+SCRATCHPAD_LENGTH = 100
+USER_SCRATCHPAD_LENGTH = 100
 
-            return text
-        except Exception as oops:
-            print(f'Error communicating with OpenAI: "{oops}"')
-            if 'maximum context length' in str(oops):
-                messages = split_long_messages(messages)
-                if len(messages) > 1:
-                    messages.pop(1)
-                print(' DEBUG: Trimming oldest message')
-                continue
-            retry += 1
-            if retry >= max_retry:
-                print(f"Exiting due to excessive errors in API: {oops}")
-                return str(oops)
-            print(f'Retrying in {2 ** (retry - 1) * 5} seconds...')
-            sleep(2 ** (retry - 1) * 5)
+# instantiate ChromaDB
+persist_directory = os.getenv("PERSIST_DIR", "../_chromadb_")
+chroma_client = chromadb.Client(Settings(persist_directory=persist_directory, chroma_db_impl="duckdb+parquet", ))
+
+# instantiate chatbot
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
-def update_default_system(uid, current_profile, main_scratchpad, conversation):
+# conversation = list()
+
+
+def update_default_system(uid, current_profile, query_texts, conversation):
     # search KB, update default system with main scratchpad
 
     kb = 'No KB articles yet'
-    collection = KBCollection()
+    collection = KBCollection(uid=uid)
     # if collection.count() > 0:
-    results = collection.query(query_texts=[main_scratchpad], n_results=1, where={"user": uid})
-    kb = results['documents'][0][0]
+    results = collection.query(query_texts=[query_texts])
+    if len(results['documents'][0]) > 0:
+        kb = results['documents'][0][0]
     print('DEBUG: Found results %s' % results)
     default_system = open_file('chatbot_templates/system_default.txt'). \
         replace('<<PROFILE>>', current_profile) \
@@ -117,26 +102,24 @@ def first_KB(uid, main_scratchpad):
     article = chat_with_open_ai(kb_convo)
     new_id = str(uuid4())
 
-    collection = KBCollection()
+    collection = KBCollection(uid=uid)
     print('====ARTICLE : [' + uid + ', ' + new_id + ']==============')
     print(article)
     print('=========================================================')
     collection.add(documents=[article], ids=[new_id], metadatas=[{'user': uid}])
+    KBCollection.persist()
     # save_file('db_logs/log_%s_add.txt' % time(), 'Added document %s:%s' % (new_id, article))
 
 
 def update_KB(uid, main_scratchpad):
-    collection = KBCollection()
+    collection = KBCollection(uid=uid)
     results = collection.query(query_texts=[main_scratchpad], n_results=1)
     print('update_KB DOCUMENTS:', results['documents'])
+    kb_id = None
+    kb = ""
     if len(results['documents'][0]) > 0:
         kb = results['documents'][0][0]
         kb_id = results['ids'][0][0]
-    else:
-        kb = ""
-        kb_id = ""
-    if not kb_id:
-        kb_id = str(uuid4())
 
     # Expand current KB
     kb_convo = list()
@@ -145,20 +128,25 @@ def update_KB(uid, main_scratchpad):
             'chatbot_templates/system_update_existing_kb.txt').replace('<<KB>>', kb)})
     kb_convo.append({'role': 'user', 'content': main_scratchpad})
     article = chat_with_open_ai(kb_convo)
-
-    collection = KBCollection()
-    print('====ARTICLE : [' + uid + ', ' + kb_id + ']==============')
+    print('====ARTICLE : [' + uid + ']==============')
     print(article)
     print('=========================================================')
-    collection.update(ids=[kb_id], documents=[article], metadatas=[{'user': uid}])
+
+    if not kb_id:
+        kb_id = str(uuid4())
+        collection.add(ids=[kb_id], documents=[article], metadatas=[{'user': uid}])
+    else:
+        collection.update(ids=[kb_id], documents=[article], metadatas=[{'user': uid}])
+
+    KBCollection.persist()
     # save_file('db_logs/log_%s_update.txt' % time(), 'Updated document %s:%s' % (kb_id, article))
     # TODO - save more info in DB logs, probably as YAML file (original article, new info, final article)
 
     # Split KB if too large
-    split_KB(kb_id, article)
+    split_KB(uid, kb_id, article)
 
 
-def split_KB(kb_id, article):
+def split_KB(uid, kb_id, article):
     kb_len = len(article.split(' '))
     if kb_len > 1000:
         kb_convo = list()
@@ -168,10 +156,11 @@ def split_KB(kb_id, article):
         a1 = articles[0].replace('ARTICLE 1:', '').strip()
         a2 = articles[1].strip()
 
-        collection = KBCollection()
+        collection = KBCollection(uid=uid)
         collection.update(ids=[kb_id], documents=[a1])
         new_id = str(uuid4())
         collection.add(documents=[a2], ids=[new_id])
+        KBCollection.persist()
         save_file('db_logs/log_%s_split.txt' % time(),
                   'Split document %s, added %s:%s\n%s' % (kb_id, new_id, a1, a2))
 
@@ -180,7 +169,7 @@ def generate_scratchpad(conversation):
     if len(conversation) > SCRATCHPAD_LENGTH:
         conversation.pop(0)
     scratchpad = '\n'.join(
-        [x.get('role', '') + ' [' + x.get('time', '') + ']: ' + x.get('content', '') for x in conversation]).strip()
+        [x.get('role', '') + ': ' + x.get('content', '') for x in conversation]).strip()
     return scratchpad
 
 
@@ -192,9 +181,9 @@ def pre_processing(uid, message, current_profile, conversation):
     # save_file(f'chat_logs/chat_%s_user-{user_id}.txt' % time(), message)
 
     # update default system with KB
-    main_scratchpad = generate_scratchpad(conversation)
+    query_texts = generate_scratchpad(conversation[-1:])
 
-    update_default_system(uid, current_profile, main_scratchpad, conversation)
+    update_default_system(uid, current_profile, query_texts, conversation)
     print(f'Finished pre processing.')
 
 
@@ -210,7 +199,7 @@ def post_processing(uid, current_profile, conversation):
     main_scratchpad = generate_scratchpad(conversation)
 
     # Update the knowledge base
-    collection = KBCollection()
+    collection = KBCollection(uid=uid)
     if collection.count() == 0:
         print('Create first KB...')
         first_KB(uid, main_scratchpad)
@@ -242,3 +231,62 @@ def process_user_message(uid, cid, message, conversation):
     post_process.start()
 
     return response
+
+
+def chat_with_open_ai(conversation, model="gpt-3.5-turbo-16k", temperature=0):
+    max_retry = 3
+    retry = 0
+    messages = [{'role': x.get('role', 'assistant'),
+                 'content': x.get('content', '')} for x in conversation]
+    while True:
+        try:
+            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
+            text = response['choices'][0]['message']['content']
+
+            # trim message object
+            debug_object = [i['content'] for i in messages]
+            debug_object.append(text)
+            # save_yaml('api_logs/convo_%s.yaml' % time(), debug_object)
+            if response['usage']['total_tokens'] >= MAX_TOKENS:
+                messages = split_long_messages(messages)
+                if len(messages) > 1:
+                    messages.pop(1)
+
+            return text
+        except Exception as oops:
+            print(f'Error communicating with OpenAI: "{oops}"')
+            if 'maximum context length' in str(oops):
+                messages = split_long_messages(messages)
+                if len(messages) > 1:
+                    messages.pop(1)
+                print(' DEBUG: Trimming oldest message')
+                continue
+            retry += 1
+            if retry >= max_retry:
+                print(f"Exiting due to excessive errors in API: {oops}")
+                return str(oops)
+            print(f'Retrying in {2 ** (retry - 1) * 5} seconds...')
+            sleep(2 ** (retry - 1) * 5)
+
+
+def split_long_messages(messages):
+    new_messages = []
+    for message in messages:
+        content = message['content']
+        if len(content.split()) > 1000:
+            # Split the content into chunks of 4096 tokens
+            chunks = [content[i:i + 1000] for i in range(0, len(content), 1000)]
+
+            # Create new messages for each chunk
+            for i, chunk in enumerate(chunks):
+                new_message = {'role': message['role'], 'content': chunk}
+                if i == 0:
+                    # Replace the original message with the first chunk
+                    new_messages.append(new_message)
+                else:
+                    # Append subsequent chunks as new messages
+                    new_messages.append({'role': message['role'], 'content': chunk})
+        else:
+            new_messages.append(message)  # No splitting required, add original message as it is
+
+    return new_messages

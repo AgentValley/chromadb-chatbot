@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 
-from chatbot import process_user_message
+from tools.chatbot import process_user_message
 
 message_bp = Blueprint('message', __name__)
 

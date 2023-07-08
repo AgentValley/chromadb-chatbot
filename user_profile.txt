@@ -1,7 +1,7 @@
 Current user profile:
 - User name: Gaurav
-- Occupation: Graphic designer
-- Interests: Painting, photography, traveling
-- Beliefs: Believes in the power of creativity and self-expression
-- Goal: To start own design studio and inspire others through work
-- Communication preference: Email, video calls
+- Occupation:
+- Interests:
+- Beliefs:
+- Goal:
+- Communication preference:

@@ -1,31 +1,35 @@
+import base64
 import io
-import re, base64
+import os
+import re
+from pathlib import Path
 
 import PyPDF2
-
 from flask import request, jsonify, Blueprint
+from llama_index import download_loader
+
+from tools.load_data import load_qna_from_documents
 
 upload_bp = Blueprint('upload', __name__)
+
+upload_dir = os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'uploads')
 
 
 @upload_bp.route('/', methods=['POST'])
 def upload_file():
     uid = request.args.get('uid')
-    raw_data = request.get_data(as_text=True)
+    files = request.files
+
+    # Resend the request to the new server URL
+    file = files.get('file')
+    filepath = os.path.join(upload_dir, file.filename)
+    if file:
+        file.save(filepath)
     try:
-        (name, stream, type) = extract_file_data(raw_data)
-        if stream:
+        documents = extracts_text_from_pdf_file(filepath)
+        load_qna_from_documents(uid, documents)
 
-            text = extract_text_from_pdf_stream(stream)
-
-            # Process the data and file as needed
-            # load_data_from_pdf(uid, file)
-            print(text)
-            print("Total Size:", len(text))
-
-            return jsonify({'message': 'Data processed successfully'}), 200
-
-        return jsonify({'message': 'UID and File data not found'}), 400
+        return jsonify({'message': 'Data processed successfully'}), 200
     except Exception as e:
         print(e)
         return jsonify({'message': 'Invalid request data'}), 400
@@ -79,3 +83,11 @@ def extract_text_from_pdf_stream(stream):
         text += page.extract_text()
 
     return text
+
+
+def extracts_text_from_pdf_file(filename):
+    PDFMinerReader = download_loader("PDFMinerReader")
+
+    loader = PDFMinerReader()
+    documents = loader.load_data(file=Path(filename))
+    return documents
