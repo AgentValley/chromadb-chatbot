@@ -8,7 +8,7 @@ import PyPDF2
 from flask import request, jsonify, Blueprint
 from llama_index import download_loader
 
-from tools.load_data import load_qna_from_documents
+from tools.load_data import load_qna_from_documents, clean_text
 
 upload_bp = Blueprint('upload', __name__)
 
@@ -27,7 +27,8 @@ def upload_file():
         file.save(filepath)
     try:
         documents = extracts_text_from_pdf_file(filepath)
-        load_qna_from_documents(uid, documents)
+        document_texts = [document.__str__() for document in documents]
+        load_data_from_texts(uid, document_texts)
 
         return jsonify({'message': 'Data processed successfully'}), 200
     except Exception as e:

@@ -3,6 +3,7 @@ import os
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
+from routes.train import train_bp
 from routes.message import message_bp
 from routes.upload import upload_bp
 
@@ -19,6 +20,7 @@ def hello():
 
 
 app.register_blueprint(message_bp, url_prefix='/message')
+app.register_blueprint(train_bp, url_prefix='/train')
 app.register_blueprint(upload_bp, url_prefix='/upload')
 
 

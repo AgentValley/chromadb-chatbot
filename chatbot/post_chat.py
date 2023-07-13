@@ -1,0 +1,22 @@
+
+def post_processing(uid, current_profile, conversation):
+    print(f'Starting post processing...')
+
+    user_messages = [x for x in conversation if x.get('role') == 'user']
+    user_scratchpad = generate_scratchpad(user_messages)
+
+    # update user profile
+    update_user_profile(uid, current_profile, user_scratchpad)
+    main_scratchpad = generate_scratchpad(conversation)
+
+    # Update the knowledge base
+    collection = KBCollection(uid=uid)
+    if collection.count() == 0:
+        print('Create first KB...')
+        first_KB(uid, main_scratchpad)
+    else:
+        print('Updating KB...')
+        update_KB(uid, main_scratchpad)
+
+    chroma_client.persist()
+    print(f'Finished post processing...')

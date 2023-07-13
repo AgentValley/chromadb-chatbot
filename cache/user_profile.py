@@ -2,8 +2,10 @@ import os
 import requests
 
 from cachetools import TTLCache
+from dotenv import load_dotenv
 
-from utils import open_file
+load_dotenv()
+
 
 MAX_CONVO_LENGTH = 100
 
@@ -40,15 +42,12 @@ def get_user_profile(uid):
         print(str(e))
 
     if not user_profile:
-        url = f'http://{os.getenv("API_SERVER")}/user/profile?uid=' + uid
+        url = f'{os.getenv("API_SERVER")}/user/profile?uid=' + uid + '&secret=' + os.getenv('SHARED_SECRET_KEY')
         response = requests.get(url)
 
         if response.status_code == 200:
             # Request successful
             user_profile = response.json().get('user_profile')
-            if not user_profile:
-                user_profile = open_file('user_profile.txt')
-
             # Cache the user profile
             try:
                 UserProfileCache.set(uid, user_profile)
@@ -60,23 +59,3 @@ def get_user_profile(uid):
 
     return user_profile
 
-
-def update_user_profile_in_db(uid, user_profile):
-    if not uid or not user_profile:
-        return
-
-    url = f'http://{os.getenv("API_SERVER")}/user/profile'
-    response = requests.post(url, json={"uid": uid, "user_profile": user_profile}, headers={'Content-Type': 'application/json'})
-
-    if response.status_code == 200:
-        # Request successful
-        print(f"User profile updated")
-    else:
-        # Request failed
-        print(f"GET request failed with status code: {response.status_code}")
-
-    # Cache the user profile
-    try:
-        UserProfileCache.set(uid, user_profile)
-    except KeyError as e:
-        print(str(e))

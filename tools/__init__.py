@@ -1,10 +1,11 @@
 import chromadb
-import openai
-from chromadb import Settings
 
 # instantiate ChromaDB
 persist_directory = "_chromadb_"
-chroma_client = chromadb.Client(Settings(persist_directory=persist_directory, chroma_db_impl="duckdb+parquet", ))
+chroma_client = chromadb.Client(chromadb.Settings(
+    persist_directory=persist_directory,
+    chroma_db_impl="duckdb+parquet",
+))
 
 
 class KBCollection:

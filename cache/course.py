@@ -41,7 +41,7 @@ def get_course(name):
 
     if not course:
         # Fetch courses from MongoDB for the user
-        url = f'http://{os.getenv("API_SERVER")}/user/profile'
+        url = f'{os.getenv("API_SERVER")}/user/profile'
         response = requests.get(url)
 
         if response.status_code == 200:
