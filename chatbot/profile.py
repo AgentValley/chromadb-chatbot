@@ -108,7 +108,8 @@ def update_system_profile(uid, cid, current_profile, recent_msgs=list()):
             {'role': 'system', 'content': 'If no profile data or conversation is provided. '
                                         'Then reply with generic tutor profile. Imagine you are teaching a random '
                                         'subject to the student by asking questions and giving explanations when '
-                                        'the student is incorrect.'}
+                                        'the student is incorrect.'},
+            {'role': 'system', 'content': 'Reply to the last user message and ask questions for clarity.'}
         ]
         system_profile = chat_with_open_ai(conversation)
 

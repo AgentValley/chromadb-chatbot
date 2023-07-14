@@ -14,4 +14,4 @@ def user_message():
 
     # Expecting the following to be text
     response = process_user_message(uid, cid, message, chat_history)
-    return response
+    return {'response': response}
