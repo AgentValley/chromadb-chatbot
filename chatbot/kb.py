@@ -1,4 +1,8 @@
+from uuid import uuid4
 
+from tools import KBCollection
+from tools.chat_openai import chat_with_open_ai
+from tools.file import open_file
 
 
 def first_KB(uid, main_scratchpad):
@@ -15,7 +19,6 @@ def first_KB(uid, main_scratchpad):
     print('=========================================================')
     collection.add(documents=[article], ids=[new_id], metadatas=[{'user': uid}])
     KBCollection.persist()
-    # save_file('db_logs/log_%s_add.txt' % time(), 'Added document %s:%s' % (new_id, article))
 
 
 def update_KB(uid, main_scratchpad):
@@ -46,8 +49,6 @@ def update_KB(uid, main_scratchpad):
         collection.update(ids=[kb_id], documents=[article], metadatas=[{'user': uid}])
 
     KBCollection.persist()
-    # save_file('db_logs/log_%s_update.txt' % time(), 'Updated document %s:%s' % (kb_id, article))
-    # TODO - save more info in DB logs, probably as YAML file (original article, new info, final article)
 
     # Split KB if too large
     split_KB(uid, kb_id, article)
@@ -68,5 +69,3 @@ def split_KB(uid, kb_id, article):
         new_id = str(uuid4())
         collection.add(documents=[a2], ids=[new_id])
         KBCollection.persist()
-        save_file('db_logs/log_%s_split.txt' % time(),
-                  'Split document %s, added %s:%s\n%s' % (kb_id, new_id, a1, a2))

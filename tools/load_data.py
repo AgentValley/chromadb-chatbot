@@ -30,9 +30,6 @@ def extract_youtube_links(urls):
     return youtube_links
 
 
-
-
-
 def load_qna_from_documents(uid, documents):
     document_texts = [clean_text(document.__str__()) for document in documents]
 
@@ -56,21 +53,10 @@ def load_qna_from_documents(uid, documents):
 
 
 def load_web_data_from_urls(uid, urls):
-    # documents = TrafilaturaWebReader().load_data(urls)
-
-    # loader = download_loader("BeautifulSoupWebReader")()
-    # documents = loader.load_data(urls=urls)
-    #
-    # # index = GPTVectorStoreIndex.from_documents(documents)
-    # # print(index.query('What language is on this website?'))
-    #
-    # document_texts = [document.__str__() for document in documents]
-    # print(f'Load URLs from {urls}, got {len(document_texts)} chars')
-
     documents = TrafilaturaWebReader().load_data(urls)
     document_texts = [document.__str__() for document in documents]
 
-    load_data_from_texts(uid, document_texts)
+    load_qna_from_documents(uid, document_texts)
     print(f'Finished loading data from urls {urls}')
 
 

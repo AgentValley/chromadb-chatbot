@@ -29,33 +29,3 @@ class UserProfileCache(object):  # Singleton
         if not UserProfileCache._instance:
             UserProfileCache()
         UserProfileCache._instance[key] = data
-
-
-def get_user_profile(uid):
-    if not uid:
-        return ""
-
-    user_profile = None
-    try:
-        user_profile = UserProfileCache.get(uid)
-    except KeyError as e:
-        print(str(e))
-
-    if not user_profile:
-        url = f'{os.getenv("API_SERVER")}/user/profile?uid=' + uid + '&secret=' + os.getenv('SHARED_SECRET_KEY')
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            # Request successful
-            user_profile = response.json().get('user_profile')
-            # Cache the user profile
-            try:
-                UserProfileCache.set(uid, user_profile)
-            except KeyError as e:
-                print(str(e))
-        else:
-            # Request failed
-            print(f"GET request failed with status code: {response.status_code}")
-
-    return user_profile
-

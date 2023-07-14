@@ -29,19 +29,19 @@ class CourseCache(object):  # Singleton
         CourseCache._instance[key] = data
 
 
-def get_course(name):
-    if not name:
+def get_course(cid):
+    if not cid:
         return
     # Check if courses are available in the cache
     course = None
     try:
-        course = CourseCache.get(name)
+        course = CourseCache.get(cid)
     except KeyError as e:
-        print(e)
+        print("ERROR get_course", e)
 
     if not course:
         # Fetch courses from MongoDB for the user
-        url = f'{os.getenv("API_SERVER")}/user/profile'
+        url = f'{os.getenv("API_SERVER")}/course?cid=' + cid
         response = requests.get(url)
 
         if response.status_code == 200:
@@ -49,12 +49,13 @@ def get_course(name):
             course = response.json()
             # Cache the courses
             try:
-                CourseCache.set(name, course)
+                CourseCache.set(cid, course)
             except KeyError as e:
-                print(str(e))
+                print("ERROR get_course", e)
         else:
             # Request failed
-            print(f"GET request failed with status code: {response.status_code}")
+            print(f"GET request failed with status code: {response.status_code} {response.text}")
+            print(f"Response", response)
             return None
 
     return course

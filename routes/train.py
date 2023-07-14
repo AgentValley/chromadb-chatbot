@@ -7,8 +7,8 @@ from tools import KBCollection
 train_bp = Blueprint('train', __name__)
 
 
-@train_bp.route('/', methods=['POST'])
-def user_train():
+@train_bp.route('', methods=['POST'])
+def train_user():
     uid = request.args.get('uid')
     rid = request.args.get('rid')
     print("### UID\n", uid)
@@ -23,7 +23,7 @@ def user_train():
         collection.add(ids=[kb_id], documents=[data], metadatas=[{'user': uid}])
         KBCollection.persist()
     except Exception as e:
-        print(e)
+        print("ERROR user_train", e)
         return jsonify({'error': str(e)}), 500
 
     return jsonify({'response': 'ok'})
