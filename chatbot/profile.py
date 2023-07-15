@@ -2,6 +2,7 @@ import os
 import requests
 
 from cache.user_profile import UserProfileCache
+from logger import log_info
 from tools.chat_openai import chat_with_open_ai
 from tools.file import open_file
 from dotenv import load_dotenv
@@ -144,7 +145,8 @@ def update_profiles_to_db(uid, cid, user_profile, system_profile):
 
     if response.status_code == 200:
         # Request successful
-        print(f"Updated user and system profiles to the db.")
+        log_info('User and system profiles updated.')
     else:
         # Request failed
-        print(f"GET request failed with status code: {response.status_code} {response.text}")
+        log_info('User and system profiles updated.', response)
+
