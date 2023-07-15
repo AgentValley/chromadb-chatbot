@@ -8,6 +8,7 @@ from chromadb import Settings
 
 from chatbot.post_chat import post_processing
 from chatbot.profile import update_system_profile, update_user_profile, get_user_profile, update_profiles_to_db
+from logger import log_info
 from tools.chat_openai import chat_with_open_ai
 from dotenv import load_dotenv
 
@@ -22,6 +23,7 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
 def process_user_message(uid, cid, message, conversation):
+    log_info('Start process user message', uid, cid, message, conversation)
     """
     LOGICAL STEPS TO TAKE:
     1. Collect data: user prompts and associated conversation history.
