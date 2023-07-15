@@ -25,7 +25,6 @@ def chat_with_open_ai(conversation, model=DEFAULT_MODEL, temperature=0):
             # trim message object
             debug_object = [i['content'] for i in messages]
             debug_object.append(text)
-            # save_yaml('api_logs/convo_%s.yaml' % time(), debug_object)
             if response['usage']['total_tokens'] >= MAX_TOKENS:
                 messages = split_long_messages(messages)
                 if len(messages) > 1:

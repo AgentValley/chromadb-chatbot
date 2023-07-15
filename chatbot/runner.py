@@ -17,8 +17,6 @@ MAX_TOKENS = 4000
 SCRATCHPAD_LENGTH = 100
 USER_SCRATCHPAD_LENGTH = 100
 
-persist_directory = os.getenv("PERSIST_DIR", "../_chromadb_")
-chroma_client = chromadb.Client(Settings(persist_directory=persist_directory, chroma_db_impl="duckdb+parquet", ))
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 

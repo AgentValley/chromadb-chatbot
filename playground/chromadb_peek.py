@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-persist_directory = os.getenv("PERSIST_DIR", "_chromadb_")
+persist_directory = os.getenv("PERSIST_DIR", "../_chromadb_")
 
 chroma_client = chromadb.Client(Settings(persist_directory=persist_directory,chroma_db_impl="duckdb+parquet",))
 collection = chroma_client.get_or_create_collection(name="knowledge_base")

@@ -18,6 +18,4 @@ class KBCollection:
                 cls._collection = chroma_client.get_or_create_collection(name=name, metadata={"user": uid})
         return cls._collection
 
-    @staticmethod
-    def persist():
-        chroma_client.persist()
+

@@ -144,7 +144,7 @@ def update_profiles_to_db(uid, cid, user_profile, system_profile):
 
     if response.status_code == 200:
         # Request successful
-        print(f"User profile updated")
+        print(f"Updated user and system profiles to the db.")
     else:
         # Request failed
         print(f"GET request failed with status code: {response.status_code} {response.text}")
