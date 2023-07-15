@@ -9,9 +9,9 @@ message_bp = Blueprint('message', __name__)
 def user_message():
     uid = request.json.get('uid')
     cid = request.json.get('cid')
-    message = request.json.get('message')
-    chat_history = request.json.get('chat_history')
+    prompt = request.json.get('prompt')
+    conversation = request.json.get('conversation')
 
     # Expecting the following to be text
-    response = process_user_message(uid, cid, message, chat_history)
+    response = process_user_message(uid, cid, prompt, conversation)
     return {'response': response}
