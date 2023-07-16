@@ -12,20 +12,25 @@ def setup_logger(filename):
     # Create console handler with a different formatter (not JSON)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-    console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+    console_formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
     ch.setFormatter(console_formatter)
 
-    # Create rotating file handler with JSON formatter
     if not filename:
         filename = 'logs/chromadb.log'
-    file_handler = TimedRotatingFileHandler(filename, when='D', interval=1, backupCount=30)
-    file_handler.setLevel(logging.INFO)
-    file_formatter = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(message)s')
-    file_handler.setFormatter(file_formatter)
+
+    # Create rotating file handler
+    fh = TimedRotatingFileHandler(filename, when='D', interval=1, backupCount=30)
+    fh.setLevel(logging.INFO)
+
+    # FIX: Use JsonFormatter for 3rd Party Tools
+    # jfh = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(message)s')
+    # jfh.setFormatter(file_formatter)
+
+    fh.setFormatter(console_formatter)
 
     # Add the handlers to the logger
     logger.addHandler(ch)
-    logger.addHandler(file_handler)
+    logger.addHandler(fh)
 
 
 def construct_log_message(message, *args, **kwargs):
