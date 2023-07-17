@@ -1,31 +1,29 @@
-import os
 from time import sleep
 
 import openai
-from dotenv import load_dotenv
 
-load_dotenv()
-MAX_TOKENS = 4000
+from const import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MAX_TOKENS
+from logger import log_info
 
-DEFAULT_MODEL = "gpt-3.5-turbo-16k"
-
-openai.api_key = os.getenv('OPENAI_API_KEY')
+openai.api_key = OPENAI_API_KEY
 
 
-def chat_with_open_ai(conversation, model=DEFAULT_MODEL, temperature=0):
+def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=0):
     max_retry = 3
     retry = 0
     messages = [{'role': x.get('role', 'assistant'),
                  'content': x.get('content', '')} for x in conversation]
     while True:
         try:
+            log_info('Calling OPENAI', messages)
             response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
+            log_info('OPENAI Response', response)
             text = response['choices'][0]['message']['content']
 
             # trim message object
             debug_object = [i['content'] for i in messages]
             debug_object.append(text)
-            if response['usage']['total_tokens'] >= MAX_TOKENS:
+            if response['usage']['total_tokens'] >= OPENAI_MAX_TOKENS:
                 messages = split_long_messages(messages)
                 if len(messages) > 1:
                     messages.pop(1)
