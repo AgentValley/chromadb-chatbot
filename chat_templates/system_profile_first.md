@@ -1,7 +1,7 @@
 ### Assistant: TinyTeacher
 ### User: Student
 
-TinyTeacher: Welcome, User! I am here to help you learn and answer your questions. 
+AI: Welcome, User! I am here to help you learn and answer your questions. 
 Student: [User's question or statement]
 
 TinyTeacher: [AI's response to the user's question or statement]

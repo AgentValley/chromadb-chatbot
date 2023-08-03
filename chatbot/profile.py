@@ -1,57 +1,61 @@
 import os
-import requests
 
-from cache.user_profile import UserProfileCache
+import requests
+from dotenv import load_dotenv
+
 from logger import log_info, log_error, log_warn
 from tools.chat_openai import chat_with_open_ai
 from tools.file import open_file
-from dotenv import load_dotenv
 
 load_dotenv()
-
 
 RECENT_MSGS_LENGTH = 5
 
 
-def get_user_profile(uid, cid):
+def get_user_and_system_profile(uid, cid):
     if not uid or not cid:
         return ""
 
-    user_profile = None
-    try:
-        user_profile = UserProfileCache.get(uid)
-    except KeyError as e:
-        log_error(f'Failed to get user profile from cache {e}')
+    # key = f'{uid}-{cid}'
+    # try:
+    #     user_profile = UserProfileCache.get(key)
+    # except KeyError as e:
+    #     log_error(f'Failed to get user profile from cache {e}')
 
+    user_profile = None
+    system_profile = None
     if not user_profile:
-        url = f'{os.getenv("API_SERVER")}/room/profile?uid=' + uid + '&cid=' + cid + '&secret=' + os.getenv('SHARED_SECRET_KEY')
+        url = (f'{os.getenv("API_SERVER")}/room/profile?'
+               'uid=' + uid +
+               '&cid=' + cid +
+               '&secret=' + os.getenv('SHARED_SECRET_KEY'))
         response = requests.get(url)
 
         if response.status_code == 200:
             # Request successful
             user_profile = response.json().get('user_profile')
+            system_profile = response.json().get('system_profile')
             # Cache the user profile
-            try:
-                UserProfileCache.set(uid, user_profile)
-            except KeyError as e:
-                log_warn(f"Error getting user profile from cache {e}")
+            # try:
+            #     UserProfileCache.set(key, user_profile)
+            # except KeyError as e:
+            #     log_warn(f"Error getting user profile from cache {e}")
         else:
             # Request failed
             log_warn(f"Error getting user profile from cache {response.status_code} {response.text}")
 
-
-    return user_profile
+    return user_profile, system_profile
 
 
 def update_user_profile(uid, cid, current_profile, recent_msgs=list()):
-
     try:
         template = open_file('chat_templates/user_profile_first.md')
 
         template = str(template)
         current_profile = str(current_profile)
         if recent_msgs:
-            recent_msgs = "\n".join([x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'user'])
+            recent_msgs = "\n".join(
+                [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'user'])
         else:
             recent_msgs = ""
 
@@ -87,31 +91,41 @@ def update_user_profile(uid, cid, current_profile, recent_msgs=list()):
         return None
 
 
-def update_system_profile(uid, cid, current_profile, recent_msgs=list()):
+def update_system_profile(uid, cid, recent_msgs, user_profile, system_profile):
     try:
         template = open_file('chat_templates/system_profile_first.md')
 
         template = str(template)
-        current_profile = str(current_profile)
+        recent_assistant_msgs = ""
+        recent_user_msgs = ""
         if recent_msgs:
-            recent_msgs = "\n".join([x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'assistant'])
-        else:
-            recent_msgs = ""
+            recent_assistant_msgs = "\n".join(
+                [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'assistant'])
+            recent_user_msgs = "\n".join(
+                [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'user'])
 
         conversation = [
+            # {'role': 'system', 'content': template},
+            # {'role': 'system', 'content': 'This is current user profile. User this info to know about the user, '
+            #                               'their progress and preferences. '
+            #                               f'USER PROFILE: {user_profile}'},
+            # {'role': 'user', 'content': f'Here are recent user messages {recent_user_msgs}'},
+            # {'role': 'assistant', 'content': f'Here are recent messages {recent_assistant_msgs}'},
+            # {'role': 'system', 'content': f'If no profile data or conversation is provided. Stick to the goal'
+            #                               f'and start learning path based on system profile {system_profile}'},
+            # {'role': 'system', 'content': f'Analyze and reply the summary of this whole context.'}
             {'role': 'system', 'content': template},
-            {'role': 'user', 'content': 'Use the details present in my current profile and return a system profile'
-                                        'by substituting the attributes. Remove those fields who value is not '
-                                        'available in current profile. Use this a reminder to yourself how to response'
-                                        'to this user. SYSTEM PROFILE: ' + current_profile},
-            {'role': 'user', 'content': 'Summarize the recent messages and append to the system profile resembling the'
-                                        'progress made by the assistant. RECENT MESSAGES: ' + recent_msgs
-                                         },
-            {'role': 'system', 'content': 'If no profile data or conversation is provided. '
-                                        'Then reply with generic tutor profile. Imagine you are teaching a random '
-                                        'subject to the student by asking questions and giving explanations when '
-                                        'the student is incorrect.'},
-            {'role': 'system', 'content': 'Reply to the last user message and ask questions for clarity.'}
+            {'role': 'system', 'content': 'This is current user profile. User this info to know about the user, '
+                                          'their progress and preferences. Given following data: '
+                                          f'USER PROFILE>>> {user_profile}'
+                                          f'USER MESSAGES >>> {recent_user_msgs}'
+                                          f'ASSISTANT MESSAGES >>> {recent_assistant_msgs}'
+                                          f'SYSTEM PROFILE >>> {system_profile}'
+                                          f''
+                                          f'If no profile data or conversation is provided. Stick to the goal'
+                                          f'Analyze the whole context and return the instructions for the AI Tutor'
+                                          f'on how to proceed. Some default options are start learning, '
+                                          f'choosing a topic, do some exercises, etc. Include course name and goal.'}
         ]
         system_profile = chat_with_open_ai(conversation)
 
@@ -150,4 +164,3 @@ def update_profiles_to_db(uid, cid, user_profile, system_profile):
     else:
         # Request failed
         log_info('User and system profiles updated.', response)
-

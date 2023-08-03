@@ -7,7 +7,7 @@ from chromadb import Settings
 
 
 from chatbot.post_chat import post_processing
-from chatbot.profile import update_system_profile, update_user_profile, get_user_profile, update_profiles_to_db
+from chatbot.profile import update_system_profile, update_user_profile, get_user_and_system_profile, update_profiles_to_db
 from logger import log_info
 from tools.chat_openai import chat_with_open_ai
 from dotenv import load_dotenv
@@ -38,15 +38,13 @@ def process_user_message(uid, cid, message, conversation):
     # load_data_process = Process(target=load_data_from_urls, args=(uid, message, ))
     # load_data_process.start()
 
-    """
-    current_user_profile = get_user_profile(uid, cid)
-    system_profile = update_system_profile(uid, cid, current_user_profile, conversation)
+    user_profile, system_profile = get_user_and_system_profile(uid, cid)
+    system_profile = update_system_profile(uid, cid, conversation, user_profile, system_profile)
     
     if not conversation:
         conversation = [{'role': 'system', 'content': str(system_profile)}]
     else:
         conversation[0] = {'role': 'system', 'content': str(system_profile)}
-    """
 
     conversation.append({'role': 'user', 'content': str(message)})
 
