@@ -38,21 +38,26 @@ def process_user_message(uid, cid, message, conversation):
     # load_data_process = Process(target=load_data_from_urls, args=(uid, message, ))
     # load_data_process.start()
 
+    """
     current_user_profile = get_user_profile(uid, cid)
     system_profile = update_system_profile(uid, cid, current_user_profile, conversation)
-
+    
     if not conversation:
         conversation = [{'role': 'system', 'content': str(system_profile)}]
     else:
         conversation[0] = {'role': 'system', 'content': str(system_profile)}
+    """
 
     conversation.append({'role': 'user', 'content': str(message)})
 
     response = chat_with_open_ai(conversation)
+
+    """
     user_profile = update_user_profile(uid, cid, current_user_profile, conversation)
 
     post_process = Process(target=update_profiles_to_db, args=(uid, cid, user_profile, system_profile,))
     post_process.start()
+    """
 
     # Store the response
     # post_process = Process(target=post_processing, args=(uid, current_user_profile, conversation,))

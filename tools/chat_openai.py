@@ -3,7 +3,7 @@ from time import sleep
 import openai
 
 from const import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MAX_TOKENS
-from logger import log_info
+from logger import log_info, log_error, log_warn
 
 openai.api_key = OPENAI_API_KEY
 
@@ -15,9 +15,9 @@ def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=0):
                  'content': x.get('content', '')} for x in conversation]
     while True:
         try:
-            log_info('Calling OPENAI', messages)
+            # log_info('Calling OPENAI', messages)
             response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
-            log_info('OPENAI Response', response)
+            # log_info('OPENAI Response', response)
             text = response['choices'][0]['message']['content']
 
             # trim message object
@@ -30,18 +30,18 @@ def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=0):
 
             return text
         except Exception as oops:
-            print(f'Error communicating with OpenAI: "{oops}"')
+            log_warn(f'Error communicating with OpenAI: "{oops}"')
             if 'maximum context length' in str(oops):
                 messages = split_long_messages(messages)
                 if len(messages) > 1:
                     messages.pop(1)
-                print(' DEBUG: Trimming oldest message')
+                log_warn(' DEBUG: Trimming oldest message')
                 continue
             retry += 1
             if retry >= max_retry:
-                print(f"Exiting due to excessive errors in API: {oops}")
+                log_warn(f"Exiting due to excessive errors in API: {oops}")
                 return str(oops)
-            print(f'Retrying in {2 ** (retry - 1) * 5} seconds...')
+            log_warn(f'Retrying in {2 ** (retry - 1) * 5} seconds...')
             sleep(2 ** (retry - 1) * 5)
 
 

@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from logger import log_info
 from tools import KBCollection
 from tools.chat_openai import chat_with_open_ai
 from tools.file import open_file
@@ -14,9 +15,9 @@ def first_KB(uid, main_scratchpad):
     new_id = str(uuid4())
 
     collection = KBCollection(uid=uid)
-    print('====ARTICLE : [' + uid + ', ' + new_id + ']==============')
-    print(article)
-    print('=========================================================')
+    log_info('====ARTICLE : [' + uid + ', ' + new_id + ']==============')
+    log_info(article)
+    log_info('=========================================================')
     collection.add(documents=[article], ids=[new_id], metadatas=[{'user': uid}])
     KBCollection.persist()
 
@@ -24,7 +25,7 @@ def first_KB(uid, main_scratchpad):
 def update_KB(uid, main_scratchpad):
     collection = KBCollection(uid=uid)
     results = collection.query(query_texts=[main_scratchpad], n_results=1)
-    print('update_KB DOCUMENTS:', results['documents'])
+    log_info('update_KB DOCUMENTS:', results['documents'])
     kb_id = None
     kb = ""
     if len(results['documents'][0]) > 0:
@@ -38,9 +39,9 @@ def update_KB(uid, main_scratchpad):
             'chatbot_templates/system_update_existing_kb.txt').replace('<<KB>>', kb)})
     kb_convo.append({'role': 'user', 'content': main_scratchpad})
     article = chat_with_open_ai(kb_convo)
-    print('====ARTICLE : [' + uid + ']==============')
-    print(article)
-    print('=========================================================')
+    log_info('====ARTICLE : [' + uid + ']==============')
+    log_info(article)
+    log_info('=========================================================')
 
     if not kb_id:
         kb_id = str(uuid4())

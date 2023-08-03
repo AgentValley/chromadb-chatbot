@@ -8,6 +8,7 @@ import PyPDF2
 from flask import request, jsonify, Blueprint
 from llama_index import download_loader
 
+from logger import log_error, log_info
 from tools.load_data import load_qna_from_documents
 
 upload_bp = Blueprint('upload', __name__)
@@ -32,7 +33,7 @@ def upload_file():
 
         return jsonify({'message': 'Data processed successfully'}), 200
     except Exception as e:
-        print("ERROR upload_file", e)
+        log_error(f"Error uploading qna documents {e}")
         return jsonify({'message': 'Invalid request data'}), 400
 
 
@@ -65,8 +66,8 @@ def extract_file_data(raw_data):
             f.write(decoded_file)
 
         # Extracted values
-        print("File Name:", file_name)
-        print("File Type:", file_type)
+        log_info("File Name:", file_name)
+        log_info("File Type:", file_type)
 
         return file_name, file_stream, file_type
     else:

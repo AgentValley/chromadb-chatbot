@@ -1,9 +1,9 @@
 import os
 import requests
-from datetime import datetime
 
 from cachetools import TTLCache
 
+from logger import log_error, log_warn
 
 MAX_CONVO_LENGTH = 100
 
@@ -37,7 +37,7 @@ def get_course(cid):
     try:
         course = CourseCache.get(cid)
     except KeyError as e:
-        print("ERROR get_course", e)
+        log_error("ERROR get_course", e)
 
     if not course:
         # Fetch courses from MongoDB for the user
@@ -51,11 +51,11 @@ def get_course(cid):
             try:
                 CourseCache.set(cid, course)
             except KeyError as e:
-                print("ERROR get_course", e)
+                log_error("ERROR get_course", e)
         else:
             # Request failed
-            print(f"GET request failed with status code: {response.status_code} {response.text}")
-            print(f"Response", response)
+            log_warn(f"GET request failed with status code: {response.status_code} {response.text}")
+            log_warn(f"Response", response)
             return None
 
     return course

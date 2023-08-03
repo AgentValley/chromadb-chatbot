@@ -5,9 +5,9 @@ from logging.handlers import TimedRotatingFileHandler
 
 
 class CustomFormatter(logging.Formatter):
-    grey = "\x1b[38;5;240m"
-    yellow = "\x1b[38;5;226m"
-    red = "\x1b[38;5;196m"
+    grey = "\x1b[38;5;248m"
+    yellow = "\x1b[38;5;221m"
+    red = "\x1b[38;5;203m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
 
@@ -56,7 +56,7 @@ def setup_logger(filename):
 
 
 def construct_log_message(message, *args, **kwargs):
-    log_message = message
+    log_message = "[vectordb-chat] " + message
     if args:
         log_message += f" - {args}"
     if kwargs:
@@ -77,3 +77,7 @@ def log_info(message, *args, **kwargs):
 def log_debug(message, *args, **kwargs):
     logger = logging.getLogger(__name__)
     logger.debug(construct_log_message(message, *args, **kwargs))
+
+def log_warn(message, *args, **kwargs):
+    logger = logging.getLogger(__name__)
+    logger.warn(construct_log_message(message, *args, **kwargs))

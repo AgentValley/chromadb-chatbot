@@ -3,6 +3,8 @@ import os
 
 from chromadb.config import Settings
 
+from logger import log_error
+
 
 class ChromaDBClient:
     _instance = None
@@ -25,5 +27,5 @@ class ChromaDBClient:
         try:
             ChromaDBClient._instance.persist()
         except Exception as e:
-            print(e)
+            log_error(f'Failed to persist ChromaDB using client{e}')
 

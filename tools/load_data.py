@@ -8,6 +8,7 @@ import openai
 from dotenv import load_dotenv
 from llama_index import download_loader, TrafilaturaWebReader
 
+from logger import log_info
 from tools import KBCollection
 from tools.chat_openai import chat_with_open_ai
 from tools.text_cleaner import clean_text
@@ -42,7 +43,7 @@ def load_qna_from_documents(uid, documents):
         chunks = response.split('\n\n')
         qnadocuments.extend(chunks)
 
-    print(f'Embedding text', qnadocuments)
+    log_info(f'Embedding text', qnadocuments)
     collection = KBCollection(uid=uid)
     collection.add(
         ids=[str(uuid4()) for x in range(0, len(qnadocuments))],
@@ -57,7 +58,7 @@ def load_web_data_from_urls(uid, urls):
     document_texts = [document.__str__() for document in documents]
 
     load_qna_from_documents(uid, document_texts)
-    print(f'Finished loading data from urls {urls}')
+    log_info(f'Finished loading data from urls {urls}')
 
 
 def load_transcript_data_from_youtube(uid, urls):
@@ -65,7 +66,7 @@ def load_transcript_data_from_youtube(uid, urls):
     loader = YoutubeTranscriptReader()
     documents = loader.load_data(ytlinks=urls)
     document_texts = [document.__str__() for document in documents]
-    print(f'Load URLs from {urls}, got {document_texts} chars')
+    log_info(f'Load URLs from {urls}, got {document_texts} chars')
 
     collection = KBCollection()
     collection.add(
@@ -74,7 +75,7 @@ def load_transcript_data_from_youtube(uid, urls):
         metadatas=[{'user': uid}]
     )
     KBCollection.persist()
-    print(f'Finished loading data from urls {urls}')
+    log_info(f'Finished loading data from urls {urls}')
 
 
 def load_data_from_urls(uid, message):
@@ -94,5 +95,5 @@ def load_data_from_urls(uid, message):
 
 
 def load_data_from_pdf(uid, file):
-    print("UID", uid)
-    print("File Data", file)
+    log_info("load_data_from_pdf UID", uid)
+    log_info("load_data_from_pdf File Data", file)

@@ -2,7 +2,7 @@ import os
 import requests
 
 from cache.user_profile import UserProfileCache
-from logger import log_info
+from logger import log_info, log_error, log_warn
 from tools.chat_openai import chat_with_open_ai
 from tools.file import open_file
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ def get_user_profile(uid, cid):
     try:
         user_profile = UserProfileCache.get(uid)
     except KeyError as e:
-        print("ERROR get_user_profile", e)
+        log_error(f'Failed to get user profile from cache {e}')
 
     if not user_profile:
         url = f'{os.getenv("API_SERVER")}/room/profile?uid=' + uid + '&cid=' + cid + '&secret=' + os.getenv('SHARED_SECRET_KEY')
@@ -34,10 +34,11 @@ def get_user_profile(uid, cid):
             try:
                 UserProfileCache.set(uid, user_profile)
             except KeyError as e:
-                print("ERROR get_user_profile", e)
+                log_warn(f"Error getting user profile from cache {e}")
         else:
             # Request failed
-            print("ERROR get_user_profile", response.status_code, response.text)
+            log_warn(f"Error getting user profile from cache {response.status_code} {response.text}")
+
 
     return user_profile
 
@@ -75,14 +76,14 @@ def update_user_profile(uid, cid, current_profile, recent_msgs=list()):
 
         if response.status_code == 200:
             # Request successful
-            print(f"User profile updated")
+            log_info(f"User profile updated")
         else:
             # Request failed
-            print(f"GET request failed with status code: {response.status_code}")
+            log_info(f"GET request failed with status code: {response.status_code}")
 
         return user_profile
     except Exception as e:
-        print("ERROR update_user_profile", e)
+        log_error(f'Failed to update user profile {e}')
         return None
 
 
@@ -121,14 +122,14 @@ def update_system_profile(uid, cid, current_profile, recent_msgs=list()):
 
         if response.status_code == 200:
             # Request successful
-            print(f"System profile updated")
+            log_info(f"System profile updated")
         else:
             # Request failed
-            print(f"GET request failed with status code: {response.status_code}")
+            log_info(f"GET request failed with status code: {response.status_code}")
 
         return system_profile
     except Exception as e:
-        print("ERROR update_system_profile", e)
+        log_error(f'Failed to update user profile {e}')
         return None
 
 
