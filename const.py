@@ -11,6 +11,7 @@ SPACY_DATA = os.path.join(os.path.dirname(__file__), 'spacy_data')
 
 # Internal
 ENV = os.getenv('ENV', 'dev')
+DEBUG = os.getenv('DEBUG', False)
 SHARED_SECRET_KEY = os.getenv('SHARED_SECRET_KEY', 'my_precious')
 
 GRAPHDB_ENDPOINT = os.getenv('GRAPHDB_ENDPOINT')
