@@ -14,7 +14,7 @@ RECENT_MSGS_LENGTH = 5
 
 def get_user_and_system_profile(uid, cid):
     if not uid or not cid:
-        return ""
+        return "", ""
 
     # key = f'{uid}-{cid}'
     # try:
