@@ -1,4 +1,5 @@
 import os
+from multiprocessing import Process
 
 import requests
 from dotenv import load_dotenv
@@ -22,27 +23,25 @@ def get_user_and_system_profile(uid, cid):
     # except KeyError as e:
     #     log_error(f'Failed to get user profile from cache {e}')
 
-    user_profile = None
-    system_profile = None
-    if not user_profile:
-        url = (f'{os.getenv("API_SERVER")}/room/profile?'
-               'uid=' + uid +
-               '&cid=' + cid +
-               '&secret=' + os.getenv('SHARED_SECRET_KEY'))
-        response = requests.get(url)
+    url = (f'{os.getenv("API_SERVER")}/room/profile?'
+           'uid=' + uid +
+           '&cid=' + cid +
+           '&secret=' + os.getenv('SHARED_SECRET_KEY'))
+    response = requests.get(url)
 
-        if response.status_code == 200:
-            # Request successful
-            user_profile = response.json().get('user_profile')
-            system_profile = response.json().get('system_profile')
-            # Cache the user profile
-            # try:
-            #     UserProfileCache.set(key, user_profile)
-            # except KeyError as e:
-            #     log_warn(f"Error getting user profile from cache {e}")
-        else:
-            # Request failed
-            log_warn(f"Error getting user profile from cache {response.status_code} {response.text}")
+    if response.status_code == 200:
+        # Request successful
+        user_profile = response.json().get('user_profile')
+        system_profile = response.json().get('system_profile')
+        # Cache the user profile
+        # try:
+        #     UserProfileCache.set(key, user_profile)
+        # except KeyError as e:
+        #     log_warn(f"Error getting user profile from cache {e}")
+    else:
+        # Request failed
+        log_warn(f"Error getting user profile from cache {response.status_code} {response.text}")
+        user_profile, system_profile = "", ""
 
     return user_profile, system_profile
 
@@ -91,7 +90,7 @@ def update_user_profile(uid, cid, current_profile, recent_msgs=list()):
         return None
 
 
-def update_system_profile(uid, cid, recent_msgs, user_profile, system_profile):
+def generate_new_system_profile(uid, cid, recent_msgs, user_profile, system_profile):
     try:
         template = open_file('chat_templates/system_profile_first.md')
 
@@ -105,15 +104,6 @@ def update_system_profile(uid, cid, recent_msgs, user_profile, system_profile):
                 [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'user'])
 
         conversation = [
-            # {'role': 'system', 'content': template},
-            # {'role': 'system', 'content': 'This is current user profile. User this info to know about the user, '
-            #                               'their progress and preferences. '
-            #                               f'USER PROFILE: {user_profile}'},
-            # {'role': 'user', 'content': f'Here are recent user messages {recent_user_msgs}'},
-            # {'role': 'assistant', 'content': f'Here are recent messages {recent_assistant_msgs}'},
-            # {'role': 'system', 'content': f'If no profile data or conversation is provided. Stick to the goal'
-            #                               f'and start learning path based on system profile {system_profile}'},
-            # {'role': 'system', 'content': f'Analyze and reply the summary of this whole context.'}
             {'role': 'system', 'content': template},
             {'role': 'system', 'content': 'This is current user profile. User this info to know about the user, '
                                           'their progress and preferences. Given following data: '
@@ -129,22 +119,28 @@ def update_system_profile(uid, cid, recent_msgs, user_profile, system_profile):
         ]
         system_profile = chat_with_open_ai(conversation)
 
-        url = f'{os.getenv("API_SERVER")}/room/profile?secret=' + os.getenv('SHARED_SECRET_KEY')
-        response = requests.post(url,
-                                 json={"uid": uid, "cid": cid, "system_profile": system_profile},
-                                 headers={'Content-Type': 'application/json'})
-
-        if response.status_code == 200:
-            # Request successful
-            log_info(f"System profile updated")
-        else:
-            # Request failed
-            log_info(f"GET request failed with status code: {response.status_code}")
+        process = Process(target=update_system_profile, args=(uid, cid, system_profile))
+        process.start()
 
         return system_profile
+
     except Exception as e:
-        log_error(f'Failed to update user profile {e}')
+        log_error(f'Failed to generate system profile ❌ :: {uid} ({cid}) :: {e}')
         return None
+
+
+def update_system_profile(uid, cid, system_profile):
+    url = f'{os.getenv("API_SERVER")}/room/profile?secret=' + os.getenv('SHARED_SECRET_KEY')
+    response = requests.post(url,
+                             json={"uid": uid, "cid": cid, "system_profile": system_profile},
+                             headers={'Content-Type': 'application/json'})
+
+    if response.status_code == 200:
+        # Request successful
+        log_info(f'System profile updated ✅ {uid} ({cid}) :: {system_profile}')
+    else:
+        # Request failed
+        log_info(f'Failed to update system profile ❌ {uid} ({cid}) :: {response.text}')
 
 
 def update_profiles_to_db(uid, cid, user_profile, system_profile):

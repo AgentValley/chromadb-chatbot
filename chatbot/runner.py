@@ -1,23 +1,17 @@
 import os
-from multiprocessing import Process
 
-import chromadb
 import openai
-from chromadb import Settings
-
-
-from chatbot.post_chat import post_processing
-from chatbot.profile import update_system_profile, update_user_profile, get_user_and_system_profile, update_profiles_to_db
-from logger import log_info, log_debug
-from tools.chat_openai import chat_with_open_ai
 from dotenv import load_dotenv
+
+from chatbot.profile import get_user_and_system_profile, generate_new_system_profile
+from logger import log_debug
+from tools.chat_openai import chat_with_open_ai
 
 load_dotenv()
 
 MAX_TOKENS = 4000
 SCRATCHPAD_LENGTH = 100
 USER_SCRATCHPAD_LENGTH = 100
-
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
@@ -40,8 +34,10 @@ def process_user_message(uid, cid, message, conversation):
 
     user_profile, system_profile = get_user_and_system_profile(uid, cid)
     log_debug(f'Got Profiles: \nUser Profile: {user_profile[:20]}\nSystem Profile: {system_profile}')
-    system_profile = update_system_profile(uid, cid, conversation, user_profile, system_profile)
+
+    system_profile = generate_new_system_profile(uid, cid, conversation, user_profile, system_profile)
     log_debug(f'Updated System Profile: \n{system_profile[:20]}')
+
     if not conversation:
         conversation = [{'role': 'system', 'content': str(system_profile)}]
     else:
