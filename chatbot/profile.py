@@ -95,24 +95,26 @@ def generate_new_system_profile(uid, cid, recent_msgs, user_profile, system_prof
         template = open_file('chat_templates/system_profile_first.md')
 
         template = str(template)
+        system_msgs = ""
         recent_assistant_msgs = ""
         recent_user_msgs = ""
         if recent_msgs:
+            system_msgs = "\n".join(
+                [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'system'])
             recent_assistant_msgs = "\n".join(
                 [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'assistant'])
             recent_user_msgs = "\n".join(
                 [x.get('content', '') for x in recent_msgs[-RECENT_MSGS_LENGTH:] if x.get('role') == 'user'])
 
         conversation = [
-            {'role': 'system', 'content': template},
+            {'role': 'system', 'content': system_msgs},
             {'role': 'system', 'content': 'This is current user profile. User this info to know about the user, '
                                           'their progress and preferences. Given following data: '
+                                          f'SYSTEM PROFILE >>> {system_profile}'
                                           f'USER PROFILE>>> {user_profile}'
                                           f'USER MESSAGES >>> {recent_user_msgs}'
                                           f'ASSISTANT MESSAGES >>> {recent_assistant_msgs}'
-                                          f'SYSTEM PROFILE >>> {system_profile}'
-                                          f''
-                                          f'If no profile data or conversation is provided. Stick to the goal'
+                                          # f'If no profile data or conversation is provided. Stick to the goal'
                                           f'Analyze the whole context and return the instructions for the AI Tutor'
                                           f'on how to proceed. Some default options are start learning, '
                                           f'choosing a topic, do some exercises, etc. Include course name and goal.'}

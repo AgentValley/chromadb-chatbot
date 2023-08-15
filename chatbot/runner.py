@@ -32,16 +32,16 @@ def process_user_message(uid, cid, message, conversation):
     # load_data_process = Process(target=load_data_from_urls, args=(uid, message, ))
     # load_data_process.start()
 
-    user_profile, system_profile = get_user_and_system_profile(uid, cid)
-    log_debug(f'Got Profiles: \nUser Profile: {user_profile[:20]}\nSystem Profile: {system_profile}')
+    # user_profile, system_profile = get_user_and_system_profile(uid, cid)
+    # log_debug(f'Got Profiles: \nUser Profile: {user_profile[:20]}\nSystem Profile: {system_profile}')
 
-    system_profile = generate_new_system_profile(uid, cid, conversation, user_profile, system_profile)
-    log_debug(f'Updated System Profile: \n{system_profile[:20]}')
+    # system_profile = generate_new_system_profile(uid, cid, conversation, user_profile, system_profile)
+    # log_debug(f'Updated System Profile: \n{system_profile[:20]}')
 
-    if not conversation:
-        conversation = [{'role': 'system', 'content': str(system_profile)}]
-    else:
-        conversation[0] = {'role': 'system', 'content': str(system_profile)}
+    # if not conversation:
+    #     conversation = [{'role': 'system', 'content': str(system_profile)}]
+    # else:
+    #     conversation[0] = {'role': 'system', 'content': str(system_profile)}
 
     conversation.append({'role': 'user', 'content': str(message)})
 
