@@ -16,8 +16,7 @@ def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=0):
     while True:
         try:
             # log_info('Calling OPENAI', messages)
-            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature,
-                                                    max_tokens=200)
+            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
             # log_info('OPENAI Response', response)
             text = response['choices'][0]['message']['content']
 
