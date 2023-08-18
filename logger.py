@@ -5,6 +5,28 @@ import logging.handlers
 from logging.handlers import TimedRotatingFileHandler
 
 
+def _get_caller_info():
+    stack = inspect.stack()
+    try:
+        # stack[0] is the current frame (inside format method)
+        # stack[1] is the caller frame (the log function call frame)
+        index = 1
+
+        while index < len(stack):
+            caller_frame = stack[index]
+            caller_filename = caller_frame.filename
+            caller_lineno = caller_frame.lineno
+            if "logger" not in caller_filename and "logging" not in caller_filename:
+                filename_parts = caller_filename.split('/')
+                return filename_parts[-1], caller_lineno
+            index += 1
+    except Exception as e:
+        print(e)
+    finally:
+        # Ensure the stack is released to prevent memory leaks
+        del stack
+
+
 class CustomFormatter(logging.Formatter):
     grey = "\x1b[38;5;248m"
     yellow = "\x1b[38;5;221m"
@@ -22,29 +44,8 @@ class CustomFormatter(logging.Formatter):
         logging.CRITICAL: bold_red + format + reset
     }
 
-    def _get_caller_info(self):
-        stack = inspect.stack()
-        try:
-            # stack[0] is the current frame (inside format method)
-            # stack[1] is the caller frame (the log function call frame)
-            index = 1
-
-            while index < len(stack):
-                caller_frame = stack[index]
-                caller_filename = caller_frame.filename
-                caller_lineno = caller_frame.lineno
-                if "logger" not in caller_filename and "logging" not in caller_filename:
-                    filename_parts = caller_filename.split('/')
-                    return filename_parts[-1], caller_lineno
-                index += 1
-        except Exception as e:
-            print(e)
-        finally:
-            # Ensure the stack is released to prevent memory leaks
-            del stack
-
     def format(self, record):
-        record.caller_filename, record.caller_lineno = self._get_caller_info()
+        record.caller_filename, record.caller_lineno = _get_caller_info()
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
@@ -100,6 +101,7 @@ def log_info(message, *args, **kwargs):
 def log_debug(message, *args, **kwargs):
     logger = logging.getLogger(__name__)
     logger.debug(construct_log_message(message, *args, **kwargs))
+
 
 def log_warn(message, *args, **kwargs):
     logger = logging.getLogger(__name__)
