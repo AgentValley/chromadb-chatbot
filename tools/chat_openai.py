@@ -2,13 +2,13 @@ from time import sleep
 
 import openai
 
-from const import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MAX_TOKENS
+from const import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MAX_TOKENS, OPENAI_TEMPERATURE
 from logger import log_info, log_error, log_warn
 
 openai.api_key = OPENAI_API_KEY
 
 
-def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=0):
+def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=OPENAI_TEMPERATURE):
     max_retry = 3
     retry = 0
     messages = [{'role': x.get('role', 'assistant'),
