@@ -54,8 +54,8 @@ def print_messages(messages):
         content = msg.get('content', '')
 
         # Trim long content if needed
-        if len(content) > 30:
-            content = f'{content[:20]}...{content[-10:]}'
+        if len(content) > 100:
+            content = f'{content[:80]}...{content[-10:]}'
 
         log_info(f'\n{role} {content}')
 
