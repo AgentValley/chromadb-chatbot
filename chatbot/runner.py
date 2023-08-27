@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from chatbot.profile import get_user_and_system_profile, generate_new_system_profile
 from logger import log_debug, log_info
-from tools.chat_openai import chat_with_open_ai
+from tools.chat_openai import chat_with_open_ai, print_response
 
 load_dotenv()
 
@@ -17,7 +17,6 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
 def process_user_message(uid, cid, message, conversation):
-    log_info(f'Processing Message: ({uid}) ({cid}) {message}')
     """
     LOGICAL STEPS TO TAKE:
     1. Collect data: user prompts and associated conversation history.
@@ -27,6 +26,8 @@ def process_user_message(uid, cid, message, conversation):
     5. Integrate with ChatGPT: Obtain the response from ChatGPT.
     6. Provide the response: Incorporate the response into the conversation.
     """
+
+    # log_info(f'Processing Message: ({uid}) ({cid}) {message}')
 
     # Store the response
     # load_data_process = Process(target=load_data_from_urls, args=(uid, message, ))
@@ -58,5 +59,5 @@ def process_user_message(uid, cid, message, conversation):
     # post_process = Process(target=post_processing, args=(uid, current_user_profile, conversation,))
     # post_process.start()
 
-    log_info(f'Response:  ({uid}) ({cid}) {response}')
+    print_response(uid, cid, response)
     return response

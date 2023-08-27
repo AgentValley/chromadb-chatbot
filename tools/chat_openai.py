@@ -13,8 +13,6 @@ def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=OPENAI_TEMPE
     retry = 0
     messages = [{'role': x.get('role', 'assistant'),
                  'content': x.get('content', '')} for x in conversation]
-    # Log messages to monitoring
-    print_messages(messages)
 
     while True:
         try:
@@ -48,16 +46,24 @@ def chat_with_open_ai(conversation, model=OPENAI_MODEL, temperature=OPENAI_TEMPE
             sleep(2 ** (retry - 1) * 5)
 
 
-def print_messages(messages):
-    for msg in messages:
+def print_conversation(uid, cid, conversation, prompt):
+    output = []
+    for msg in conversation:
         role = msg.get('role', 'assistant')
         content = msg.get('content', '')
 
         # Trim long content if needed
-        if len(content) > 100:
-            content = f'{content[:80]}...{content[-10:]}'
+        if role != 'system' and len(content) > 300:
+            content = f'{content[:180]}...\n...{content[-100:]}'
 
-        log_info(f'\n{role} {content}')
+        role = f'💬 {role}: ' if role == 'user' else f'🤖 {role}: '
+        output.append(f'{role} {content}')
+    output.append(f'💬 [user] {prompt}')
+    log_warn(f'💬 Conversation : UID: {uid} - CID: {cid}\n' + '\n'.join(output))
+
+
+def print_response(uid, cid, response):
+    log_warn(f'🤖 RESPONSE: USER: {uid} - CID: {cid}\n' + f'🤖 [assistant] {response}')
 
 
 def split_long_messages(messages):
